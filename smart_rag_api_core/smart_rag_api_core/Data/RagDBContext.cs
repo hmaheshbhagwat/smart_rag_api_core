@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using smart_rag_api_core.Models;
 
 namespace smart_rag_api_core.Data
 {
@@ -8,5 +9,7 @@ namespace smart_rag_api_core.Data
         {
             
         }
+
+        public DbSet<User> Users { get; set; }
     }
 }
