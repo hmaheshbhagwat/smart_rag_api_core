@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using smart_rag_api_core.Models;
+using smart_rag_api_core.Data.Configuration;
+using smart_rag_api_core.Models.Data;
 
 namespace smart_rag_api_core.Data
 {
@@ -11,5 +12,11 @@ namespace smart_rag_api_core.Data
         }
 
         public DbSet<User> Users { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.ApplyConfiguration(new UserConfiguration());
+        }
     }
 }

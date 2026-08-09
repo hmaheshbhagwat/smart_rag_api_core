@@ -1,12 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace smart_rag_api_core.Models
+namespace smart_rag_api_core.Models.Data
 {
     public class User
     {
 
         [Key]
-        public int Id { get; set; }
+        public Guid Id { get; set; } = new Guid();
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
 
