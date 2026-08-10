@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using smart_rag_api_core.Data;
 using smart_rag_api_core.Models;
 using smart_rag_api_core.Models.Data;
 using smart_rag_api_core.Models.DTO;
+using smart_rag_api_core.Repositories;
 
 namespace smart_rag_api_core.Controllers
 {
@@ -12,36 +15,27 @@ namespace smart_rag_api_core.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly RagDBContext dbContext;
+        private readonly IMapper mapper;
+        private readonly IUserRepository userRepository;
 
-        public UserController(RagDBContext dbContext)
+        public UserController(RagDBContext dbContext, IUserRepository userRepository, IMapper mapper)
         {
-            this.dbContext = dbContext;
+            this.mapper = mapper;
+            this.userRepository = userRepository;
         }
         [HttpGet]
-        public IActionResult AllUsers()
+        public async Task<IActionResult> AllUsersAsync()
         {
-            var userDTOs = dbContext.Users.Select(user => new UserDTO
-            {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email
-            }).ToList();  
+            var users = await userRepository.AllUsersAsync();
+            var userDTOs = mapper.Map<List<UserDTO>>(users);
             return Ok(userDTOs);
         }
-        
+
         [HttpGet("{id:Guid}")]
-        public IActionResult GetUserByID([FromRoute] Guid id)
+        public async Task<IActionResult> GetUserByID([FromRoute] Guid id)
         {
-            var user = dbContext.Users.FirstOrDefault(x => x.Id == id);
-            var userDTO = new UserDTO
-            {
-               
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email
-               
-            };
+            var user = await userRepository.GetUserByIdAsync(id);
+            var userDTO = mapper.Map<UserDTO>(user);
             if (user == null)
             {
                 return NotFound();
@@ -51,52 +45,38 @@ namespace smart_rag_api_core.Controllers
 
         [HttpPost]
 
-        public IActionResult CreateUser([FromBody] UserDTO userDTO)
+        public async Task<IActionResult> CreateUserAsync([FromBody] UserDTO userDTO)
         {
-          var user = new User
-          {
-              FirstName = userDTO.FirstName,
-              LastName = userDTO.LastName,
-              Email = userDTO.Email,
-              Password = "defaultpassword",
-              Id = new Guid()
-          };
-          dbContext.Users.Add(user);
-          dbContext.SaveChanges();
-          return CreatedAtAction(nameof(GetUserByID), new { id = user.Id }, user);
+            var user = mapper.Map<User>(userDTO);
+            await userRepository.CreateUserAsync(user);
+            return CreatedAtAction(nameof(GetUserByID), new { id = user.Id }, user);
         }
 
         [HttpPut]
         [Route("{id:Guid}")]
-        public IActionResult Update([FromRoute] Guid id, [FromBody] UserDTO userDTO)
+        public async Task<IActionResult> UpdateAsync([FromRoute] Guid id, [FromBody] UserDTO userDTO)
         {
-            var user = dbContext.Users.FirstOrDefault(x => x.Id == id);
-            if(user == null)
+            var user = mapper.Map<User>(userDTO);
+            user = await userRepository.UpdateAsync(id, user);
+            if (user == null)
             {
                 return NotFound();
             }
-
-            user.FirstName = userDTO.FirstName;
-            user.LastName = userDTO.LastName;
-            user.Email = userDTO.Email;
-            dbContext.SaveChanges();
-
-            var returnDTO = new UserDTO() { FirstName = user.FirstName, LastName = user.LastName, Email = user.Email };
+            var returnDTO = mapper.Map<UserDTO>(user);
             return Ok(returnDTO);
         }
 
 
         [HttpDelete]
         [Route("{id:Guid}")]
-        public IActionResult RemoveUser([FromRoute] Guid id)
+        public async Task<IActionResult> RemoveUserAsync([FromRoute] Guid id)
         {
-            var user = dbContext.Users.FirstOrDefault(x => x.Id == id);
-            if(user == null)
+
+            var user = await userRepository.DeleteAsync(id);
+            if (user == null)
             {
                 return NotFound();
             }
-            dbContext.Users.Remove(user);
-            dbContext.SaveChanges();
             return Ok();
         }
     }

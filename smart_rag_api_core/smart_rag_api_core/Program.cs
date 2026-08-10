@@ -1,6 +1,8 @@
 using smart_rag_api_core.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer;
+using smart_rag_api_core.Repositories;
+using smart_rag_api_core.Mappings;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +18,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<RagDBContext>(options => {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
-
+builder.Services.AddAutoMapper(config => config.AddProfile<AutoMapperProfile>());
+builder.Services.AddScoped<IUserRepository, SqlUserRepository>();
 var app = builder.Build();
 
 //swagger
